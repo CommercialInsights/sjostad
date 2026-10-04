@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ringlista</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F5F7F6; --panel:#FFFFFF; --ink:#18201E; --muted:#5E6A66; --line:#DCE2DF;
+  --call:#2D5C86; --call-soft:#E6EEF5; --deal:#17784A; --deal-soft:#E3F2EA; --focus:#2D5C86;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#121615; --panel:#1A201E; --ink:#E7ECEA; --muted:#97A39F; --line:#2C3532;
+  --call:#8DB5DB; --call-soft:#1D2A36; --deal:#5FCB93; --deal-soft:#16291F; --focus:#8DB5DB; } }
+:root[data-theme="dark"]{ --bg:#121615; --panel:#1A201E; --ink:#E7ECEA; --muted:#97A39F; --line:#2C3532;
+  --call:#8DB5DB; --call-soft:#1D2A36; --deal:#5FCB93; --deal-soft:#16291F; --focus:#8DB5DB; }
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+a{color:inherit}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:18px 20px 14px}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 28px;max-width:1280px;margin:0 auto}
+h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:0}
+.meter{display:flex;gap:22px;color:var(--muted);font-size:14px}
+.meter b{color:var(--ink);font-size:18px;font-weight:600;margin-right:4px}
+.meter .d b{color:var(--deal)}
+.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden;max-width:1280px;margin:12px auto 0;display:flex}
+.bar i{display:block;height:100%}
+.bar .bc{background:var(--call)} .bar .bd{background:var(--deal)}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;max-width:1280px;margin:14px auto 0}
+input[type=search]{flex:1 1 260px;min-width:0;font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button,.btn{font:inherit;font-size:14px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.chips button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn{border-radius:8px}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.sb{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:5px;border-radius:4px}
+.sb::after{content:"";width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor;opacity:.25}
+th[aria-sort] .sb{color:var(--ink)}
+th[aria-sort] .sb::after{opacity:1}
+th[aria-sort=ascending] .sb::after{transform:rotate(180deg)}
+th.c .sb{justify-content:center}
+.sb:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.sortsel{display:none;font-size:14px;color:var(--muted);align-items:center;gap:6px}
+.sortsel select{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 8px}
+.status{max-width:1280px;margin:8px auto 0;font-size:13px;color:var(--muted);min-height:18px}
+main{max-width:1280px;margin:0 auto;padding:0 20px 60px}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:980px}
+th{text-align:left;font-size:13px;font-weight:600;color:var(--muted);padding:12px 10px 8px;border-bottom:1px solid var(--line)}
+th.c{text-align:center}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top;background:var(--panel)}
+tr.done td{background:var(--call-soft)}
+tr.deal td{background:var(--deal-soft)}
+tr.deal td:first-child{box-shadow:inset 4px 0 0 var(--deal)}
+.co{font-weight:600}
+.sub{font-size:13px;color:var(--muted)}
+.ct a{text-decoration:none;border-bottom:1px solid var(--line)}
+.ct a:hover{border-color:currentColor}
+.ct div{white-space:nowrap}
+td.c{text-align:center;width:84px}
+.tick{appearance:none;width:26px;height:26px;border:2px solid var(--line);border-radius:6px;cursor:pointer;display:inline-grid;place-content:center;background:var(--panel);margin:0}
+.tick::after{content:"";width:12px;height:7px;border-left:3px solid #fff;border-bottom:3px solid #fff;transform:rotate(-45deg) translate(1px,-1px);opacity:0}
+.tick.call:checked{background:var(--call);border-color:var(--call)}
+.tick.deal{border-radius:50%}
+.tick.deal:checked{background:var(--deal);border-color:var(--deal)}
+.tick:checked::after{opacity:1}
+.tick:disabled{cursor:not-allowed;opacity:.6}
+textarea{width:100%;min-width:220px;font:inherit;font-size:14px;resize:vertical;min-height:38px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink)}
+textarea:focus{background:var(--panel)}
+.when{font-size:12px;color:var(--muted);margin-top:3px}
+.empty{padding:40px 10px;color:var(--muted)}
+@media (max-width:760px){
+  header{padding:14px 14px 10px} main{padding:0 10px 40px}
+  table{min-width:0} thead{display:none}
+  tr{display:grid;grid-template-columns:1fr auto auto;gap:0 6px;border-bottom:1px solid var(--line);background:var(--panel);padding:10px 4px}
+  tr.done{background:var(--call-soft)} tr.deal{background:var(--deal-soft);box-shadow:inset 4px 0 0 var(--deal)}
+  td{border:0;padding:4px 6px;background:transparent!important;box-shadow:none!important}
+  td.n{grid-column:1/-1} td.ct{grid-column:1/2} td.c{width:auto;align-self:start}
+  td.c::before{content:attr(data-l);display:block;font-size:11px;color:var(--muted)}
+  td.co-cell{grid-column:1/-1}
+  .sortsel{display:inline-flex}
+}
+@media (prefers-reduced-motion:no-preference){ tr td{transition:background-color .25s} }
+#login{position:fixed;inset:0;z-index:20;background:var(--bg);display:grid;place-items:center;padding:20px}
+#login form{width:100%;max-width:360px;display:grid;gap:12px}
+#login h2{margin:0;font-size:24px;letter-spacing:-.01em}
+#login p{margin:0;color:var(--muted)}
+#login input{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+#login button{font:inherit;font-weight:600;padding:10px;border-radius:8px;border:0;background:var(--ink);color:var(--bg);cursor:pointer}
+#login .err{color:#B3261E;min-height:20px;font-size:14px}
+</style>
+</head>
+<body>
+<div id="login" hidden>
+  <form id="lf">
+    <h2>Ringlista</h2>
+    <p>Skriv in nyckeln du fått för att öppna listan.</p>
+    <input id="lk" type="password" autocomplete="current-password" aria-label="Nyckel" required>
+    <button type="submit">Öppna listan</button>
+    <div class="err" id="le" role="alert"></div>
+  </form>
+</div>
+<header>
+  <div class="top">
+    <h1>Ringlista</h1>
+    <div class="meter" aria-live="polite">
+      <span><b id="mCall">0</b>av <span id="mTot">0</span> kontaktade</span>
+      <span class="d"><b id="mDeal">0</b>affärer</span>
+    </div>
+  </div>
+  <div class="bar" aria-hidden="true"><i class="bd" id="bD"></i><i class="bc" id="bC"></i></div>
+  <div class="tools">
+    <input type="search" id="q" placeholder="Sök företag, namn, gata eller anteckning" aria-label="Sök">
+    <div class="chips" role="group" aria-label="Filter">
+      <button data-f="all" aria-pressed="true">Alla</button>
+      <button data-f="todo" aria-pressed="false">Ej kontaktade</button>
+      <button data-f="done" aria-pressed="false">Kontaktade</button>
+      <button data-f="deal" aria-pressed="false">Affär</button>
+    </div>
+    <label class="sortsel">Sortera
+      <select id="sortSel">
+        <option value="co">Företag A–Ö</option>
+        <option value="vd">Kontaktperson A–Ö</option>
+        <option value="ct">Bäst kontaktuppgifter först</option>
+        <option value="call">Kontaktade först</option>
+        <option value="deal">Affärer först</option>
+        <option value="note">Senast uppdaterad först</option>
+      </select></label>
+    <button class="btn" id="exp" hidden>Ladda ner som CSV</button>
+  </div>
+  <div class="status" id="st">Hämtar listan…</div>
+</header>
+<main>
+  <div class="wrap">
+    <table>
+      <thead><tr><th data-k="co" aria-sort="ascending"><button class="sb">Företag</button></th><th data-k="vd"><button class="sb">Kontaktperson</button></th><th data-k="ct"><button class="sb">Telefon och e-post</button></th><th class="c" data-k="call"><button class="sb">Kontaktad</button></th><th class="c" data-k="deal"><button class="sb">Affär</button></th><th data-k="note"><button class="sb">Anteckning</button></th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </div>
+  <div class="empty" id="empty" hidden>Inga företag matchar. Rensa sökningen eller byt filter.</div>
+</main>
+<script>
+// Klistra in webbappens URL från Apps Script här:
+const API = 'KLISTRA_IN_DIN_APPS_SCRIPT_URL_HAR';
+const POLL_MS = 30000;
+
+let DATA=[], BYID={}, S={}, KEY='', filter='all', sort={k:'co',dir:'asc'};
+const $=s=>document.querySelector(s), tb=$('#tb'), st=$('#st'), rows={};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const telHref=n=>'tel:'+n.replace(/[^\d+]/g,'').replace(/^0/,'+46');
+const nowStr=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`};
+const store={get(k){try{return localStorage.getItem(k)||''}catch(e){return ''}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+
+async function load(){
+  const r=await fetch(API+'?key='+encodeURIComponent(KEY));
+  const j=await r.json();
+  if(j.error) throw new Error(j.error);
+  return j.rows;
+}
+function ingest(list,first){
+  for(const r of list){
+    const prev=S[r.id];
+    const s={kontaktad:r.kontaktad,affar:r.affar,anteckning:r.anteckning,t:r.t};
+    if(first){ DATA.push([r.id,r.foretag,r.namn,r.tel,r.direkt,r.epost,r.adress,r.orgnr]); }
+    if(!prev||prev.t!==s.t||prev.kontaktad!==s.kontaktad||prev.affar!==s.affar||prev.anteckning!==s.anteckning){
+      if(prev&&prev.pending) continue; // vår egen ändring är på väg
+      S[r.id]=s; if(!first) paint(r.id);
+    }
+  }
+}
+
+function build(){
+  const f=document.createDocumentFragment();
+  for(const r of DATA){
+    const [id,co,vd,tel,dir,mail,adr,org]=r; BYID[id]=r;
+    const tr=document.createElement('tr'); tr.dataset.id=id;
+    tr.dataset.s=(co+' '+vd+' '+adr+' '+org).toLowerCase();
+    let ct='';
+    if(dir) ct+=`<div><a href="${telHref(dir)}">${esc(dir)}</a> <span class="sub">direkt</span></div>`;
+    if(tel) ct+=`<div><a href="${telHref(tel)}">${esc(tel)}</a> <span class="sub">växel</span></div>`;
+    if(mail) ct+=`<div><a href="mailto:${esc(mail)}">${esc(mail)}</a></div>`;
+    if(!ct) ct='<span class="sub">Inga kontaktuppgifter</span>';
+    tr.innerHTML=`<td class="co-cell"><div class="co">${esc(co)}</div><div class="sub">${esc(adr)}</div></td>
+      <td class="n">${esc(vd)}<div class="sub">VD</div></td>
+      <td class="ct">${ct}</td>
+      <td class="c" data-l="Kontaktad"><input type="checkbox" class="tick call" aria-label="Kontaktad: ${esc(co)}"></td>
+      <td class="c" data-l="Affär"><input type="checkbox" class="tick deal" aria-label="Affär: ${esc(co)}"></td>
+      <td><textarea rows="1" aria-label="Anteckning: ${esc(co)}" placeholder="Skriv en anteckning"></textarea><div class="when"></div></td>`;
+    const [cCall,cDeal]=tr.querySelectorAll('input'), ta=tr.querySelector('textarea');
+    cCall.onchange=()=>save(id,{kontaktad:cCall.checked});
+    cDeal.onchange=()=>{const p={affar:cDeal.checked}; if(cDeal.checked)p.kontaktad=true; save(id,p);};
+    let timer; ta.oninput=()=>{clearTimeout(timer);timer=setTimeout(()=>save(id,{anteckning:ta.value}),1200)};
+    ta.onblur=()=>{clearTimeout(timer); if((S[id]?.anteckning||'')!==ta.value) save(id,{anteckning:ta.value})};
+    rows[id]={tr,cCall,cDeal,ta,when:tr.querySelector('.when')};
+    f.appendChild(tr); paint(id);
+  }
+  tb.appendChild(f);
+  $('#mTot').textContent=DATA.length;
+}
+function paint(id){
+  const r=rows[id]; if(!r) return; const s=S[id]||{};
+  r.cCall.checked=!!s.kontaktad; r.cDeal.checked=!!s.affar;
+  if(document.activeElement!==r.ta) r.ta.value=s.anteckning||'';
+  r.when.textContent=s.t?'Uppdaterad '+s.t:'';
+  r.tr.classList.toggle('done',!!s.kontaktad&&!s.affar);
+  r.tr.classList.toggle('deal',!!s.affar);
+}
+function meter(){
+  let c=0,d=0; for(const id in S){ if(S[id].kontaktad)c++; if(S[id].affar)d++; }
+  $('#mCall').textContent=c; $('#mDeal').textContent=d;
+  const n=DATA.length||1;
+  $('#bC').style.width=((c-d)/n*100)+'%'; $('#bD').style.width=(d/n*100)+'%';
+}
+function apply(){
+  const q=$('#q').value.trim().toLowerCase(); let n=0;
+  for(const id in rows){
+    const r=rows[id], s=S[id]||{};
+    let ok=!q||r.tr.dataset.s.includes(q)||(s.anteckning||'').toLowerCase().includes(q);
+    if(filter==='todo') ok=ok&&!s.kontaktad;
+    if(filter==='done') ok=ok&&!!s.kontaktad;
+    if(filter==='deal') ok=ok&&!!s.affar;
+    r.tr.hidden=!ok; if(ok)n++;
+  }
+  $('#empty').hidden=n>0||!DATA.length;
+}
+
+// Sparar en ändring i taget, i ordning, så att inget skrivs över.
+let queue=Promise.resolve();
+function save(id,patch){
+  const s={kontaktad:false,affar:false,anteckning:'',...(S[id]||{}),...patch,t:nowStr(),pending:true};
+  S[id]=s; paint(id); meter(); if(filter!=='all') apply();
+  st.textContent='Sparar…';
+  queue=queue.then(async()=>{
+    try{
+      const r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({key:KEY,id,kontaktad:s.kontaktad,affar:s.affar,anteckning:s.anteckning})});
+      const j=await r.json();
+      if(j.error) throw new Error(j.error);
+      if(S[id]===s){ delete s.pending; s.t=j.t; paint(id); }
+      st.textContent='Sparat '+j.t+'.';
+    }catch(e){
+      delete s.pending;
+      st.textContent='Kunde inte spara '+BYID[id][1]+'. Kontrollera nätet och gör ändringen igen.';
+    }
+  });
+}
+
+// Sortering
+const DEF={co:'asc',vd:'asc',ct:'desc',call:'desc',deal:'desc',note:'desc'};
+const coll=new Intl.Collator('sv');
+const rank=r=>r[4]?3:r[3]?2:r[5]?1:0;
+function key(id){ const r=BYID[id], s=S[id]||{};
+  switch(sort.k){ case 'vd':return r[2]; case 'ct':return rank(r); case 'call':return s.kontaktad?1:0;
+    case 'deal':return s.affar?1:0; case 'note':return s.t||''; default:return r[1]; } }
+function doSort(){
+  const m=sort.dir==='asc'?1:-1;
+  const ids=Object.keys(rows).sort((a,b)=>{ const x=key(a),y=key(b);
+    const c=typeof x==='string'?coll.compare(x,y):x-y; return c*m||coll.compare(BYID[a][1],BYID[b][1]); });
+  const f=document.createDocumentFragment(); ids.forEach(id=>f.appendChild(rows[id].tr)); tb.appendChild(f);
+  document.querySelectorAll('th[data-k]').forEach(th=>{
+    if(th.dataset.k===sort.k) th.setAttribute('aria-sort',sort.dir==='asc'?'ascending':'descending'); else th.removeAttribute('aria-sort'); });
+  $('#sortSel').value=sort.k;
+}
+function setSort(k,toggle){ if(toggle&&sort.k===k) sort.dir=sort.dir==='asc'?'desc':'asc'; else sort={k,dir:DEF[k]}; doSort(); }
+
+function csv(){
+  const head=['Företag','Kontaktperson','Telefon','Direktnummer','E-post','Adress','Orgnr','Kontaktad','Affär','Anteckning','Uppdaterad'];
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const lines=[head.map(q).join(';')];
+  for(const [id,co,vd,tel,dir,mail,adr,org] of DATA){ const s=S[id]||{};
+    lines.push([co,vd,tel,dir,mail,adr,org,s.kontaktad?'Ja':'',s.affar?'Ja':'',s.anteckning||'',s.t||''].map(q).join(';')); }
+  return '\ufeff'+lines.join('\r\n');
+}
+
+// UI-kopplingar
+document.querySelectorAll('.chips button').forEach(b=>b.onclick=()=>{
+  filter=b.dataset.f; document.querySelectorAll('.chips button').forEach(x=>x.setAttribute('aria-pressed',x===b)); apply();});
+$('#q').oninput=apply;
+document.querySelectorAll('th[data-k] .sb').forEach(b=>b.onclick=()=>setSort(b.closest('th').dataset.k,true));
+$('#sortSel').onchange=e=>setSort(e.target.value,false);
+const exp=$('#exp'); exp.hidden=false; exp.onclick=()=>{
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv()],{type:'text/csv;charset=utf-8'}));
+  a.download='ringlista-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
+
+async function start(){
+  st.textContent='Hämtar listan…';
+  try{
+    const list=await load();
+    $('#login').hidden=true; store.set('ringlista-key',KEY);
+    ingest(list,true); build(); meter(); apply();
+    st.textContent='Listan uppdateras automatiskt var 30:e sekund.';
+    setInterval(async()=>{ if(document.hidden) return;
+      try{ ingest(await load(),false); meter(); if(filter!=='all') apply(); }catch(e){} },POLL_MS);
+  }catch(e){
+    $('#login').hidden=false;
+    if(e.message==='fel_nyckel'){ store.del('ringlista-key'); $('#le').textContent=KEY?'Fel nyckel. Försök igen.':''; }
+    else $('#le').textContent='Kunde inte nå listan. Kontrollera adressen i API och att webbappen är publicerad.';
+  }
+}
+$('#lf').onsubmit=e=>{ e.preventDefault(); KEY=$('#lk').value.trim(); $('#le').textContent=''; start(); };
+KEY=store.get('ringlista-key');
+if(KEY) start(); else $('#login').hidden=false;
+</script>
+</body>
+</html>
