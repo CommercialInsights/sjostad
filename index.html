@@ -90,6 +90,7 @@ textarea:focus{background:var(--panel)}
 #login h2{margin:0;font-size:24px;letter-spacing:-.01em}
 #login p{margin:0;color:var(--muted)}
 #login input{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+#login button:disabled{opacity:.6;cursor:wait}
 #login button{font:inherit;font-weight:600;padding:10px;border-radius:8px;border:0;background:var(--ink);color:var(--bg);cursor:pointer}
 #login .err{color:#B3261E;min-height:20px;font-size:14px}
 </style>
@@ -145,7 +146,7 @@ textarea:focus{background:var(--panel)}
 </main>
 <script>
 // Klistra in webbappens URL från Apps Script här:
-const API = 'https://script.google.com/macros/s/AKfycbyqTO4_F3UThgR1KXzaX1akDaP3eRjXTthIGbL2UNgC7_7OADxIOg1v_gxxkKUUiP_x/exec';
+const API = 'KLISTRA_IN_DIN_APPS_SCRIPT_URL_HAR';
 const POLL_MS = 30000;
 
 let DATA=[], BYID={}, S={}, KEY='', filter='all', sort={k:'co',dir:'asc'};
@@ -156,7 +157,8 @@ const nowStr=()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');return `${d.
 const store={get(k){try{return localStorage.getItem(k)||''}catch(e){return ''}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 
 async function load(){
-  const r=await fetch(API+'?key='+encodeURIComponent(KEY));
+  const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),25000);
+  let r; try{ r=await fetch(API+'?key='+encodeURIComponent(KEY),{signal:ctl.signal}); } finally{ clearTimeout(to); }
   const j=await r.json();
   if(j.error) throw new Error(j.error);
   return j.rows;
@@ -286,18 +288,21 @@ const exp=$('#exp'); exp.hidden=false; exp.onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv()],{type:'text/csv;charset=utf-8'}));
   a.download='ringlista-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); };
 
+function busy(on){ const b=$('#lf button'); b.disabled=on; b.textContent=on?'Öppnar listan…':'Öppna listan'; }
 async function start(){
-  st.textContent='Hämtar listan…';
+  st.textContent='Hämtar listan…'; busy(true);
   try{
     const list=await load();
-    $('#login').hidden=true; store.set('ringlista-key',KEY);
+    busy(false); $('#login').hidden=true; store.set('ringlista-key',KEY);
     ingest(list,true); build(); meter(); apply();
     st.textContent='Listan uppdateras automatiskt var 30:e sekund.';
     setInterval(async()=>{ if(document.hidden) return;
       try{ ingest(await load(),false); meter(); if(filter!=='all') apply(); }catch(e){} },POLL_MS);
   }catch(e){
     $('#login').hidden=false;
+    busy(false); console.error(e);
     if(e.message==='fel_nyckel'){ store.del('ringlista-key'); $('#le').textContent=KEY?'Fel nyckel. Försök igen.':''; }
+    else if(e.name==='AbortError') $('#le').textContent='Det tog för lång tid att få svar från kalkylarket. Försök igen.';
     else $('#le').textContent='Kunde inte nå listan. Kontrollera adressen i API och att webbappen är publicerad.';
   }
 }
