@@ -186,7 +186,7 @@ function ingest(list,first){
 let queue=Promise.resolve();
 function save(id,patch){
   const s={...(S[id]||dyn({})),...patch,t:nowStr(),pending:true};
-  S[id]=s; paint(id); meter(); apply();
+  S[id]=s; paint(id); meter(); apply(); sortSoon();
   st.textContent='Sparar…';
   queue=queue.then(async()=>{
     try{
@@ -251,6 +251,20 @@ function meter(){
   const n=DATA.length||1;
   $('#bC').style.width=((c-d)/n*100)+'%'; $('#bD').style.width=(d/n*100)+'%';
 }
+// Kontaktade överst (senast uppdaterade först), därefter övriga i listans ordning (prio A–C).
+function doSort(){
+  const ae=document.activeElement;
+  if(ae&&(ae.tagName==='TEXTAREA'||ae.tagName==='SELECT')) return;
+  const pos={}; DATA.forEach((r,i)=>pos[r.id]=i);
+  const ids=Object.keys(rows).sort((a,b)=>{
+    const x=S[a]||dyn({}), y=S[b]||dyn({});
+    if(x.kontaktad!==y.kontaktad) return x.kontaktad?-1:1;
+    if(x.kontaktad&&x.t!==y.t) return (y.t||'').localeCompare(x.t||'');
+    return pos[a]-pos[b];
+  });
+  const f=document.createDocumentFragment(); ids.forEach(id=>f.appendChild(rows[id].tr)); tb.appendChild(f);
+}
+let sortTimer; const sortSoon=()=>{clearTimeout(sortTimer);sortTimer=setTimeout(doSort,1500)};
 function apply(){
   const q=$('#q').value.trim().toLowerCase(), who=$('#fWho').value, cat=$('#fCat').value; let n=0;
   for(const id in rows){
@@ -288,10 +302,10 @@ async function start(){
     if(API.startsWith('KLISTRA')) throw new Error('ingen_api');
     const list=await load();
     busy(false); $('#login').hidden=true; store.set('villatipset-key',KEY);
-    ingest(list,true); build(); meter(); apply();
+    ingest(list,true); build(); doSort(); meter(); apply();
     st.textContent='Listan uppdateras automatiskt var 30:e sekund.';
     setInterval(async()=>{ if(document.hidden) return;
-      try{ ingest(await load(),false); meter(); apply(); }catch(e){} },POLL_MS);
+      try{ ingest(await load(),false); meter(); doSort(); apply(); }catch(e){} },POLL_MS);
   }catch(e){
     $('#login').hidden=false; busy(false); console.error(e);
     if(e.message==='fel_nyckel'){ store.del('villatipset-key'); $('#le').textContent=KEY?'Fel nyckel. Försök igen.':''; }
